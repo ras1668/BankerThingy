@@ -1,0 +1,65 @@
+The banker is initially configured with the number of resources it has to loan. 
+Newly created threads register their maximum resource claim; obviously, this cannot exceed the number of resources the banker has. 
+For each registered thread the banker maintains the maximum claim and the number of resources on loan to the thread (initially 0).
+
+Once registered, a thread can request and release resources. 
+We will ignore the details of how specific units (e.g., specific printers) are associated with a thread; 
+all we care about is the following:
+The number of resource units currently allocated to each thread.
+The number of resource units remaining in each thread's request.
+The number of unallocated resource units.
+
+The information above defines the state of the system from the perspective of the Banker. Note the following state invariants:
+The unallocated units plus the sum of the units allocated to each thread equals the total number of units available.
+For each thread, its allocation plus its remaining claim equals its maximum claim.
+
+
+
+
+We want to keep the banker is a safe state at all times:
+The initial state, where no threads have registered a claim, is safe.
+If the system is in a safe state and  new thread registers a claim for no more than the available resources, 
+	the resulting state is safe (in the worst case we can run all the threads in the original state to completion, 
+	and then run the new thread to completion).
+Thus, the only time we can create an unsafe state is when a thread attempts to acquire more resources (up to its remaining claim). 
+	In this case, we "pretend" to allocate the resource(s) by creating a copy of the current state, and altering the copy to 
+	reflect an increase of the requesting thread's allocation (and decrease of its remaining claim) by the number of units requested.
+Run the bankers algorithm (see below) on the pretend sate, and
+	If the pretend state is safe, use it as the current state and return the resources to the requester.
+	If the pretend state is unsafe, block the requester until some resources are released, and repeat the "pretend" allocation again.
+If the system is in a safe state and a thread releases some resources, the resulting state is safe (why?). 
+	As this may allow a blocked requester to get the resources it needs, we unblock any and all blocked 
+	requesters in the hope that at least one will be able to proceed.
+
+
+
+
+
+The Banker's Algorithm: Determining State Safety
+Inputs:
+(Copy of) the numberOfUnitsOnHand for the Banker to allocate.
+(Copy of) a map from Threads to the pair of integers representing each Thread's currentAllocation and remainingClaim.
+Output:
+    true if the input state is safe, false otherwise.
+Algorithm sketch:
+    Create an array holding the allocation/remaining claim pairs (the identity of the threads is irrelevant to safety).
+    Sort the array by increasing order of remaining claim.
+
+    For i in 0 to array.length - 1 Do
+
+        // If there are not enough units for the ith thread's claim, then it cannot be guaranteed to
+        // complete. Because the array is sorted, no thread after i can be guaranteed to complete,
+        // so we have possible deadlock.
+
+        If array[i].remainingClaim > numberOfUnitsOnHand Then    // Too few units remain
+            Return false
+        End
+
+        // There are enough resources on hand so that we could run this thread until it releases all its
+        // resources, in which case we'd reclaim them and advance to the array entry for the next thread.
+
+        numberOfUnitsOnHand += array[i].currentAllocation
+    End
+
+    // We get here if it is possible for all threads to complete.
+    Return true
