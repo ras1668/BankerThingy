@@ -102,6 +102,7 @@ public class Banker {
 		}
 		System.out.println("Thread " + name + "has " + nUnits + " units allocated.");
 		this.nUnits.set(this.nUnits.get() - nUnits);
+		threadClaims.get(name)[0] += nUnits;
 		return true;
 	}
 	
@@ -119,6 +120,18 @@ public class Banker {
 		 * Release nUnits of the units allocated to the current thread, 
 		 * notify all waiting threads, and return.
 		 */
+		String name = Thread.currentThread().getName();
+		if (threadClaims.containsKey(name) == false || nUnits <= 0){
+			System.exit(1);
+		}
+		Integer[] claim = threadClaims.get(name);
+		if (nUnits > claim[1]){
+			System.exit(1);
+		}
+		System.out.println("Thread " + name + " releases " + nUnits + " units.");
+		this.nUnits.getAndAdd(nUnits);
+		threadClaims.get(name)[0] = 0;
+		notifyAll();
 	}
 	
 	public int allocated( ) {
