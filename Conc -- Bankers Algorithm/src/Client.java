@@ -53,12 +53,12 @@ multiple Client objects call methods in a shared Banker object
 			} else{
 				banker.request(nUnits);
 			}
-			long rand = minSleepMillis + (random.nextLong() * (maxSleepMillis-minSleepMillis));
+			long rand = (minSleepMillis + (random.nextInt((int)maxSleepMillis) * (maxSleepMillis-minSleepMillis)));
 			try{
+				System.out.println("Max: " + (maxSleepMillis-minSleepMillis) + " Min: " + minSleepMillis + "rand: " + rand);
 				Thread.sleep(rand);
 			} catch(InterruptedException e){}
 		}
 		banker.release(nUnits);
-		return;
 	}
 }

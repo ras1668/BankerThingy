@@ -43,7 +43,8 @@ public class Banker {
 		 * where name is the thread name (via Thread.currentThread().getName()) 
 		 * and nUnits is the number of resources claimed, and return.
 		 */
-		if(threadClaims.containsKey(Thread.currentThread().getName()) || nUnits <= 0 || nUnits > this.nUnits.get()){
+		if(threadClaims.containsKey(Thread.currentThread().getName()) || nUnits <= 0 || nUnits > unitsAvailable()){
+			System.out.println("Whoops claimUnits: " + nUnits + "  unitsAvailable" + unitsAvailable() );
 			System.exit(1);
 		} else{
 			String name = Thread.currentThread().getName();
@@ -54,7 +55,7 @@ public class Banker {
 		
 	}
 	
-	public boolean request(int nUnits) {
+	public synchronized boolean request(int nUnits) {
 		/**
 		 * The current thread requests nUnits more resources.
 		 * 
@@ -83,7 +84,7 @@ public class Banker {
 			System.exit(1);
 		}
 		Integer[] claim = threadClaims.get(Thread.currentThread().getName());
-		if ((claim[0] - claim[1]) > nUnits){
+		if ((claim[0] - claim[1]) > unitsAvailable()){
 			System.exit(1);
 		}
 		
@@ -95,12 +96,12 @@ public class Banker {
 		while (bankersAlgorithm(unitsOnHand,threadClaimsCopy) == false){
 			System.out.println("Thread " + name + " waits.");
 			try{
-			Thread.currentThread().wait();
+				Thread.currentThread().wait();
 			} catch(InterruptedException e){
 				System.out.println("Thread" + name + " awakened");
 			}
 		}
-		System.out.println("Thread " + name + "has " + nUnits + " units allocated.");
+		System.out.println("Thread " + name + " has " + nUnits + " units allocated.");
 		this.nUnits.set(this.nUnits.get() - nUnits);
 		threadClaims.get(name)[0] += nUnits;
 		return true;
@@ -171,5 +172,12 @@ public class Banker {
 			}
 		}
 		return true;
+	}
+	private int unitsAvailable(){
+		int units = nUnits.get();
+		for (Integer[] claim: threadClaims.values()){
+			units += claim[1];
+		}
+		return units;
 	}
 }
